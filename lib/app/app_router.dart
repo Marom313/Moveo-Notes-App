@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../views/login/login_screen.dart';
+import '../views/note/note_screen.dart';
 import '../views/signup/signup_screen.dart';
 import '../views/main/main_screen.dart';
 
@@ -30,6 +31,19 @@ class AppRouter {
         builder: (context, state) => const SignUpScreen(),
       ),
       GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
+      // GoRoute(
+      //   path: '/note_edit',
+      //   builder: (context, state) => const NoteScreen(),
+      // ),
+      GoRoute(
+        path: '/note_edit',
+        builder: (context, state) {
+          final note = state.extra is Map ? (state.extra as Map)['note'] : null;
+          final index =
+              state.extra is Map ? (state.extra as Map)['index'] : null;
+          return NoteScreen(note: note, noteIndex: index);
+        },
+      ),
       GoRoute(
         path: '/',
         builder:

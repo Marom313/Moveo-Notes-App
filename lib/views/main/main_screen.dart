@@ -42,14 +42,20 @@
 //     );
 //   }
 // }
+// This patch fixes the rendering and rebuild timing issues for the map and SharedPreferences.
+// It delays map rendering until after loadNotes() completes and location is retrieved.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
+import '../../services/map_controller_service.dart';
+import '../../viewmodels/navigation_vm.dart';
 import '../../viewmodels/note_vm.dart';
 import '../note/note_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -59,24 +65,46 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int selectedIndex = 0;
+  bool _isReady = false;
+  LatLng? _currentPosition;
 
   @override
   void initState() {
     super.initState();
-    Provider.of<NoteViewModel>(context, listen: false).loadNotes();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Provider.of<NoteViewModel>(context, listen: false).loadNotes();
+      try {
+        final pos = await Geolocator.getCurrentPosition();
+        setState(() {
+          _currentPosition = LatLng(pos.latitude, pos.longitude);
+          _isReady = true;
+        });
+      } catch (e) {
+        debugPrint('Location error: $e');
+        setState(() {
+          _currentPosition = const LatLng(32.0853, 34.7818); // fallback to TLV
+          _isReady = true;
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final mapController = Provider.of<MapControllerService>(context).controller;
     final notes = Provider.of<NoteViewModel>(context).notes;
+    final navVM = Provider.of<NavigationViewModel>(context);
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+    int selectedIndex = navVM.selectedIndex;
+
+    if (!_isReady) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     Widget content;
 
     if (selectedIndex == 0) {
-      // Notes List Mode
       content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,11 +134,9 @@ class _MainScreenState extends State<MainScreen> {
                   final note = notes[index];
                   return GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (_) => NoteScreen(note: note, noteIndex: index),
-                        ),
+                      context.push(
+                        '/note_edit',
+                        extra: {'note': note, 'index': index},
                       );
                     },
                     child: Container(
@@ -143,65 +169,15 @@ class _MainScreenState extends State<MainScreen> {
         ],
       );
     } else {
-      // Map Mode (empty for now)
-      // content = const Center(child: Text("Map view coming soon..."));
       content = Padding(
         padding: const EdgeInsets.all(12.0),
-        // child: FlutterMap(
-        //   options: MapOptions(
-        //     center:
-        //         notes.isNotEmpty
-        //             ? notes.last.locationCreated
-        //             : const LatLng(
-        //               32.0853,
-        //               34.7818,
-        //             ), // Tel Aviv as a safe default
-        //     zoom: 13,
-        //     onTap: (_, __) {},
-        //   ),
-        //   children: [
-        //     TileLayer(
-        //       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        //       userAgentPackageName: 'com.example.app',
-        //     ),
-        //     MarkerLayer(
-        //       markers:
-        //           notes.map((note) {
-        //             return Marker(
-        //               point: note.locationCreated,
-        //               width: 40,
-        //               height: 40,
-        //               builder:
-        //                   (ctx) => GestureDetector(
-        //                     onTap: () {
-        //                       Navigator.of(context).push(
-        //                         MaterialPageRoute(
-        //                           builder:
-        //                               (_) => NoteScreen(
-        //                                 note: note,
-        //                                 noteIndex: notes.indexOf(note),
-        //                               ),
-        //                         ),
-        //                       );
-        //                     },
-        //                     child: const Icon(
-        //                       Icons.location_pin,
-        //                       color: Colors.red,
-        //                       size: 36,
-        //                     ),
-        //                   ),
-        //             );
-        //           }).toList(),
-        //     ),
-        //   ],
-        // ),
         child: FlutterMap(
-          mapController: MapController(),
+          mapController: mapController,
           options: MapOptions(
             initialCenter:
                 notes.isNotEmpty
                     ? notes.last.locationCreated
-                    : const LatLng(32.0853, 34.7818),
+                    : _currentPosition!,
             initialZoom: 13,
           ),
           children: [
@@ -218,14 +194,9 @@ class _MainScreenState extends State<MainScreen> {
                       height: 40,
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => NoteScreen(
-                                    note: note,
-                                    noteIndex: notes.indexOf(note),
-                                  ),
-                            ),
+                          context.push(
+                            '/note_edit',
+                            extra: {'note': note, 'index': notes.indexOf(note)},
                           );
                         },
                         child: const Icon(
@@ -258,7 +229,7 @@ class _MainScreenState extends State<MainScreen> {
       body: SafeArea(child: content),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
-        onTap: (index) => setState(() => selectedIndex = index),
+        onTap: (index) => navVM.setTab(index),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.note), label: 'Note'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
@@ -268,10 +239,7 @@ class _MainScreenState extends State<MainScreen> {
         padding: EdgeInsets.only(right: width * 0.03, bottom: height * 0.02),
         child: FloatingActionButton(
           onPressed: () {
-            // TODO: Navigate to NoteScreen for new note
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const NoteScreen()));
+            context.push('/note_edit');
           },
           child: const Icon(Icons.add),
         ),

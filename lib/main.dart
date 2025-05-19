@@ -118,6 +118,9 @@
 //   }
 // }
 
+import 'package:assignment_app/services/auth_service.dart';
+import 'package:assignment_app/services/map_controller_service.dart';
+import 'package:assignment_app/viewmodels/navigation_vm.dart';
 import 'package:assignment_app/viewmodels/note_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -134,6 +137,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => NoteViewModel()),
+        ChangeNotifierProvider(create: (_) => NavigationViewModel()),
+        ChangeNotifierProvider(create: (_) => MapControllerService()),
       ],
       child: const MyApp(),
     ),
