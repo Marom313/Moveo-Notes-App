@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../viewmodels/auth_vm.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -28,6 +27,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
           key: _formKey,
           child: Column(
             children: [
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'First Name'),
+                onChanged: authVM.setFirstName,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Enter First Name'
+                            : null,
+              ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Last Name'),
+                onChanged: authVM.setLastName,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Enter Last Name'
+                            : null,
+              ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Email'),
                 onChanged: authVM.setEmail,
@@ -74,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               _confirmPasswordController.text,
                             );
                             if (user != null) {
-                              context.go('/login');
+                              context.go('/main');
                             } else {
                               debugPrint(
                                 " Signup failed: ${authVM.errorMessage}",

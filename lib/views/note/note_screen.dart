@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../models/note_model.dart';
-import '../../services/map_controller_service.dart';
-import '../../viewmodels/navigation_vm.dart';
+import '../../viewmodels/auth_vm.dart';
+import '../../viewmodels/main_vm.dart';
 import '../../viewmodels/note_vm.dart';
 
 class NoteScreen extends StatefulWidget {
@@ -25,10 +26,11 @@ class _NoteScreenState extends State<NoteScreen> {
   @override
   void initState() {
     super.initState();
+
     if (widget.note != null) {
-      _titleController.text = widget.note!.title;
-      _bodyController.text = widget.note!.body;
-      _selectedDate = widget.note!.dateCreated;
+      _titleController.text = widget.note!.title!;
+      _bodyController.text = widget.note!.body!;
+      _selectedDate = widget.note!.dateCreated!;
     }
   }
 
@@ -38,13 +40,13 @@ class _NoteScreenState extends State<NoteScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        debugPrint('❌ Location permission denied');
+        debugPrint('Location permission denied');
         return false;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      debugPrint('❌ Location permission permanently denied');
+      debugPrint('Location permission permanently denied');
       return false;
     }
 
@@ -52,6 +54,8 @@ class _NoteScreenState extends State<NoteScreen> {
   }
 
   Future<void> _saveNote() async {
+    final userVM = Provider.of<AuthViewModel>(context, listen: false);
+    final userId = userVM.currentUser?.uid ?? '';
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
 
@@ -74,22 +78,25 @@ class _NoteScreenState extends State<NoteScreen> {
     final pos = await Geolocator.getCurrentPosition();
     final location = LatLng(pos.latitude, pos.longitude);
 
-    final newNote = Note(
-      locationCreated: location,
-      dateCreated: _selectedDate,
-      title: title,
-      body: body,
-    );
+    final newNote =
+        Note()
+          ..id = widget.note?.id ?? Isar.autoIncrement
+          ..userId = userId
+          ..lat = location.latitude
+          ..long = location.longitude
+          ..dateCreated = _selectedDate
+          ..title = title
+          ..body = body;
 
     final noteVM = Provider.of<NoteViewModel>(context, listen: false);
-    if (widget.noteIndex != null) {
-      await noteVM.updateNote(widget.noteIndex!, newNote);
+    if (widget.note != null) {
+      await noteVM.updateNote(newNote);
     } else {
       await noteVM.addNote(newNote);
     }
 
     //SET tab to Map and pop
-    final navVM = Provider.of<NavigationViewModel>(context, listen: false);
+    final navVM = Provider.of<MainViewModel>(context, listen: false);
     navVM.setTab(1);
     await Future.delayed(Duration(milliseconds: 300)); // allow UI to update
     navVM.setTab(1); // switch to map tab
@@ -98,7 +105,7 @@ class _NoteScreenState extends State<NoteScreen> {
         content: Text(
           widget.noteIndex != null
               ? "Note updated successfully!"
-              : "Note saved successfully!",
+              : "Note added successfully!",
         ),
       ),
     );
@@ -107,21 +114,11 @@ class _NoteScreenState extends State<NoteScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final lastNote = noteVM.notes.last;
-      Provider.of<MapControllerService>(context, listen: false).moveTo(
-        lastNote.locationCreated.latitude,
-        lastNote.locationCreated.longitude,
+      context.read<MainViewModel>().moveTo(
+        lastNote.lat ?? 0.0,
+        lastNote.long ?? 0.0,
       );
     });
-
-    // if (context.mounted) {
-    //   final lastNote = noteVM.notes.last;
-    //   final mapController =
-    //       Provider.of<MapControllerService>(context, listen: false).controller;
-    //   mapController.move(lastNote.locationCreated, 13);
-    // } // switch to Map tab
-    // if (context.mounted) {
-    //   Navigator.of(context).pop(); // back to main screen
-    // } // go back to MainScreen
   }
 
   Future<void> _pickDate() async {
@@ -150,11 +147,6 @@ class _NoteScreenState extends State<NoteScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Note name'),
-            ),
-            const SizedBox(height: 12),
             Row(
               children: [
                 Text(
@@ -166,6 +158,11 @@ class _NoteScreenState extends State<NoteScreen> {
                   child: const Text("Select Date"),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Note name'),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -200,9 +197,11 @@ class _NoteScreenState extends State<NoteScreen> {
                         context,
                         listen: false,
                       );
-                      await noteVM.deleteNote(widget.noteIndex!);
+                      await noteVM.deleteNote(widget.note!);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("🗑️ Note deleted.")),
+                        const SnackBar(
+                          content: Text("Note deleted successfully!"),
+                        ),
                       );
                     }
                     Navigator.of(context).pop();
