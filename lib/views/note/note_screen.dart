@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import '../../bonus/image_picker_widget.dart';
 import '../../models/note_model.dart';
 import '../../viewmodels/auth_vm.dart';
 import '../../viewmodels/main_vm.dart';
@@ -23,6 +27,7 @@ class _NoteScreenState extends State<NoteScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  String? _imagePath;
 
   @override
   void initState() {
@@ -32,6 +37,7 @@ class _NoteScreenState extends State<NoteScreen> {
       _titleController.text = widget.note!.title!;
       _bodyController.text = widget.note!.body!;
       _selectedDate = widget.note!.dateCreated!;
+      _imagePath = widget.note!.imagePath;
     }
   }
 
@@ -88,7 +94,8 @@ class _NoteScreenState extends State<NoteScreen> {
           ..long = location.longitude
           ..dateCreated = _selectedDate
           ..title = title
-          ..body = body;
+          ..body = body
+          ..imagePath = _imagePath;
 
     if (widget.note != null) {
       await noteVM.updateNote(newNote);
@@ -139,10 +146,11 @@ class _NoteScreenState extends State<NoteScreen> {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Note")),
+      appBar: AppBar(title: const Text("Note")),
       body: Padding(
         padding: EdgeInsets.all(height * 0.02),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -174,6 +182,46 @@ class _NoteScreenState extends State<NoteScreen> {
               ),
             ),
             SizedBox(height: height * 0.02),
+            if (_imagePath != null)
+              Image.file(
+                File(_imagePath!),
+                height: height * 0.35,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            Row(
+              children: [
+                SizedBox(width: width * 0.12),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text("Camera"),
+                  onPressed: () async {
+                    final path = await ImagePickerHelper.pickImage(
+                      context,
+                      ImageSource.camera,
+                    );
+                    if (path != null) {
+                      setState(() => _imagePath = path);
+                    }
+                  },
+                ),
+                SizedBox(width: width * 0.08),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.photo),
+                  label: const Text("Gallery"),
+                  onPressed: () async {
+                    final path = await ImagePickerHelper.pickImage(
+                      context,
+                      ImageSource.gallery,
+                    );
+                    if (path != null) {
+                      setState(() => _imagePath = path);
+                    }
+                  },
+                ),
+              ],
+            ),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

@@ -13,4 +13,5 @@ class Note {
   String? body;
   double? lat;
   double? long;
+  String? imagePath;
 }

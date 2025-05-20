@@ -109,7 +109,7 @@ class _MainScreenState extends State<MainScreen> {
                                   _sortDescending
                                       ? Icons.arrow_upward
                                       : Icons.arrow_downward,
-                                  size: height * 0.02,
+                                  size: height * 0.03,
                                 ),
                               ],
                             ),

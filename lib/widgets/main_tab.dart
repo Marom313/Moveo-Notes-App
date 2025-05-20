@@ -60,7 +60,7 @@ class MainTab extends StatelessWidget {
                   final note = notes[index];
                   return GestureDetector(
                     onTap: () {
-                      context.go(
+                      context.push(
                         '/note_edit',
                         extra: {'note': note, 'index': index},
                       );
