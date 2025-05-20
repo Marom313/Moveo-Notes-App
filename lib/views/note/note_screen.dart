@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -58,6 +59,7 @@ class _NoteScreenState extends State<NoteScreen> {
     final userId = userVM.currentUser?.uid ?? '';
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
+    final noteVM = Provider.of<NoteViewModel>(context, listen: false);
 
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,14 +90,12 @@ class _NoteScreenState extends State<NoteScreen> {
           ..title = title
           ..body = body;
 
-    final noteVM = Provider.of<NoteViewModel>(context, listen: false);
     if (widget.note != null) {
       await noteVM.updateNote(newNote);
     } else {
       await noteVM.addNote(newNote);
     }
 
-    //SET tab to Map and pop
     final navVM = Provider.of<MainViewModel>(context, listen: false);
     navVM.setTab(1);
     await Future.delayed(Duration(milliseconds: 300)); // allow UI to update
@@ -109,9 +109,6 @@ class _NoteScreenState extends State<NoteScreen> {
         ),
       ),
     );
-
-    Navigator.of(context).pop(); // go back
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final lastNote = noteVM.notes.last;
       context.read<MainViewModel>().moveTo(
@@ -119,6 +116,7 @@ class _NoteScreenState extends State<NoteScreen> {
         lastNote.long ?? 0.0,
       );
     });
+    context.go('/main');
   }
 
   Future<void> _pickDate() async {
@@ -128,10 +126,7 @@ class _NoteScreenState extends State<NoteScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       builder:
-          (context, child) => Theme(
-            data: ThemeData.light(), // Feel free to customize
-            child: child!,
-          ),
+          (context, child) => Theme(data: ThemeData.light(), child: child!),
     );
 
     if (picked != null) {
@@ -141,10 +136,12 @@ class _NoteScreenState extends State<NoteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(title: const Text("Edit Note")),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(height * 0.02),
         child: Column(
           children: [
             Row(
@@ -152,19 +149,19 @@ class _NoteScreenState extends State<NoteScreen> {
                 Text(
                   "Date: ${_selectedDate.toLocal().toString().split(' ')[0]}",
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: width * 0.06),
                 ElevatedButton(
                   onPressed: _pickDate,
                   child: const Text("Select Date"),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: height * 0.02),
             TextField(
               controller: _titleController,
               decoration: const InputDecoration(labelText: 'Note name'),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: height * 0.02),
             Expanded(
               child: TextField(
                 controller: _bodyController,
@@ -176,7 +173,7 @@ class _NoteScreenState extends State<NoteScreen> {
                 expands: true,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: height * 0.02),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -192,19 +189,21 @@ class _NoteScreenState extends State<NoteScreen> {
                     backgroundColor: Colors.red.withOpacity(0.3),
                   ),
                   onPressed: () async {
-                    if (widget.noteIndex != null) {
+                    if (widget.note != null) {
                       final noteVM = Provider.of<NoteViewModel>(
                         context,
                         listen: false,
                       );
                       await noteVM.deleteNote(widget.note!);
+                      context.read<MainViewModel>().setTab(0);
+                      context.go('/main');
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Note deleted successfully!"),
                         ),
                       );
                     }
-                    Navigator.of(context).pop();
+                    // Navigator.of(context).pop();
                   },
                   child: const Text("Delete"),
                 ),

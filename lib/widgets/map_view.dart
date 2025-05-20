@@ -19,6 +19,8 @@ class MapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: FlutterMap(
@@ -42,11 +44,11 @@ class MapView extends StatelessWidget {
                     .map((note) {
                       return Marker(
                         point: LatLng(note.lat!, note.long!),
-                        width: 40,
-                        height: 40,
+                        width: width * 0.5,
+                        height: height * 0.5,
                         child: GestureDetector(
                           onTap: () {
-                            context.push(
+                            context.go(
                               '/note_edit',
                               extra: {
                                 'note': note,
@@ -54,10 +56,10 @@ class MapView extends StatelessWidget {
                               },
                             );
                           },
-                          child: const Icon(
+                          child: Icon(
                             Icons.location_pin,
                             color: Colors.red,
-                            size: 36,
+                            size: height * 0.04,
                           ),
                         ),
                       );

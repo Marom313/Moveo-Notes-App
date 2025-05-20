@@ -10,6 +10,7 @@ import 'package:assignment_app/app/app_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
   try {
     await IsarService.openDB();
   } catch (e) {}

@@ -9,23 +9,45 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authVM = context.read<AuthViewModel>();
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    bool _obscurePassword = true;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Login")),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
             TextField(
               decoration: const InputDecoration(labelText: 'Email'),
               onChanged: authVM.setEmail,
             ),
-            TextField(
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-              onChanged: authVM.setPassword,
+            StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return TextField(
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscurePassword,
+                  onChanged: authVM.setPassword,
+                );
+              },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: height * 0.08),
             ElevatedButton(
               onPressed:
                   authVM.isLoading
@@ -41,10 +63,10 @@ class LoginScreen extends StatelessWidget {
                       ? const CircularProgressIndicator()
                       : const Text("Login"),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: height * 0.02),
             TextButton(
               onPressed: () {
-                context.go('/signup');
+                context.push('/signup');
               },
               child: const Text("Don't have an account? Sign up"),
             ),

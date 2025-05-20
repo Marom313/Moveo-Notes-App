@@ -14,6 +14,6 @@ class MainViewModel extends ChangeNotifier {
 
   void moveTo(double lat, double lng, {double zoom = 13}) {
     controller.move(LatLng(lat, lng), zoom);
-    notifyListeners();
+    // notifyListeners();
   }
 }

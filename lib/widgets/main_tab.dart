@@ -12,6 +12,7 @@ class MainTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
     final user = Provider.of<AuthViewModel>(context).currentUser;
     final firstName = user?.displayName ?? '👤';
     return Column(
@@ -21,17 +22,26 @@ class MainTab extends StatelessWidget {
           padding: EdgeInsets.all(16.0),
           child: Center(
             child: Text(
-              'Welcome $firstName to Note App',
+              'Welcome $firstName !',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
           ),
         ),
         if (notes.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'No notes yet, press the plus sign and make a new one!',
-              style: TextStyle(color: AppColors.textColor),
+            child: Column(
+              children: [
+                SizedBox(height: height * 0.2),
+                Center(
+                  child: Text(
+                    'No notes yet  👀,\n '
+                    'press the plus sign and make a new one !\n ',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textColor, fontSize: 20),
+                  ),
+                ),
+              ],
             ),
           )
         else
@@ -40,8 +50,8 @@ class MainTab extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: GridView.builder(
                 itemCount: notes.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 250,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   childAspectRatio: 3 / 2,
@@ -50,7 +60,7 @@ class MainTab extends StatelessWidget {
                   final note = notes[index];
                   return GestureDetector(
                     onTap: () {
-                      context.push(
+                      context.go(
                         '/note_edit',
                         extra: {'note': note, 'index': index},
                       );
@@ -77,7 +87,7 @@ class MainTab extends StatelessWidget {
                               note.body ?? '',
                               overflow: TextOverflow.ellipsis,
                               maxLines: 3,
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(fontSize: 12),
                             ),
                           ),
                         ],

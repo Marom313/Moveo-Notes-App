@@ -18,9 +18,14 @@ class AuthViewModel extends ChangeNotifier {
     return currentUser;
   }
 
+  void _setLoading(bool value) {
+    isLoading = value;
+    notifyListeners();
+  }
+
   Future<User?> login() async {
     try {
-      isLoading = true;
+      _setLoading(true);
       notifyListeners();
       final user = await _authService.login(email, password);
       errorMessage = null;
@@ -29,7 +34,7 @@ class AuthViewModel extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       errorMessage = e.message;
     } finally {
-      isLoading = false;
+      _setLoading(false);
       notifyListeners();
     }
     return null;
@@ -49,7 +54,7 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     try {
-      isLoading = true;
+      _setLoading(true);
       notifyListeners();
 
       final user = await _authService.signup(email.trim(), password);
@@ -61,14 +66,13 @@ class AuthViewModel extends ChangeNotifier {
         currentUser = FirebaseAuth.instance.currentUser;
       }
       errorMessage = null;
-      currentUser = user;
-      return user;
+      return currentUser;
     } on FirebaseAuthException catch (e) {
       errorMessage = e.message;
     } catch (e) {
       errorMessage = "Unexpected error: $e";
     } finally {
-      isLoading = false;
+      _setLoading(false);
       notifyListeners();
     }
 
@@ -88,7 +92,7 @@ class AuthViewModel extends ChangeNotifier {
 
   void setEmail(String val) {
     email = val;
-    notifyListeners();
+    // notifyListeners();
   }
 
   void setPassword(String val) {
