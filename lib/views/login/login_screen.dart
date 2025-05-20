@@ -10,7 +10,6 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authVM = context.read<AuthViewModel>();
     final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
     bool _obscurePassword = true;
 
     return Scaffold(

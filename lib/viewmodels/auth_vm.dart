@@ -59,7 +59,7 @@ class AuthViewModel extends ChangeNotifier {
 
       final user = await _authService.signup(email.trim(), password);
       if (user != null) {
-        final fullName = '$firstName';
+        final fullName = firstName;
 
         await user.updateDisplayName(fullName);
         await user.reload();
@@ -83,7 +83,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       await _authService.logout();
     } catch (e) {
-      print('sadsasda');
+      debugPrint('$e');
     } finally {
       currentUser = null;
       notifyListeners();

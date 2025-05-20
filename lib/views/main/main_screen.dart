@@ -17,7 +17,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  bool _isReady = false;
   LatLng? _currentPosition;
   bool _sortDescending = true;
   final PageController _pageController = PageController();
@@ -34,7 +33,6 @@ class _MainScreenState extends State<MainScreen> {
         final pos = await Geolocator.getCurrentPosition();
         setState(() {
           _currentPosition = LatLng(pos.latitude, pos.longitude);
-          // _isReady = true;
         });
       } catch (e) {
         debugPrint('Location error: $e');
@@ -43,7 +41,6 @@ class _MainScreenState extends State<MainScreen> {
             32.0853,
             34.7818,
           ); //location is Tel Aviv
-          _isReady = true;
         });
       }
     });
